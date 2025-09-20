@@ -19,6 +19,59 @@ const POKEMON_LIMITS = {
     MIN_ERROR_LENGTH: 3
 };
 
+// Navigation system to handle back button functionality
+const NavigationSystem = {
+    stack: [],
+    
+    push(page) {
+        this.stack.push(page);
+    },
+    
+    pop() {
+        return this.stack.pop();
+    },
+    
+    canGoBack() {
+        return this.stack.length > 0;
+    },
+    
+    goBack() {
+        if (this.canGoBack()) {
+            const previousPage = this.pop();
+            if (previousPage.type === 'home') {
+                this.showHomePage();
+            } else if (previousPage.type === 'pokemon') {
+                this.showPokemonDetail(previousPage.data);
+            } else if (previousPage.type === 'move') {
+                displayMoveDetails(previousPage.data);
+            }
+        } else {
+            // Default fallback to home
+            this.showHomePage();
+        }
+    },
+    
+    showHomePage() {
+        const main = document.querySelector('main');
+        main.innerHTML = `
+            <div id="search">
+                <input type="text" id="pokemon-input" placeholder="Enter Pokemon name or ID">
+                <button id="search-button">Search</button>
+            </div>
+            <div id="pokemon-display"></div>
+        `;
+        displayAllPokemon();
+        setupSearchFunctionality();
+    },
+    
+    async showPokemonDetail(pokemonName) {
+        const detailedPokemon = await getPokemonDetailedData(pokemonName);
+        if (detailedPokemon) {
+            displayPokemonDetail(detailedPokemon);
+        }
+    }
+};
+
 const SPECIAL_POKEMON_NAMES = {
     'nidoran-f': 'Nidoran♀',
     'nidoran-m': 'Nidoran♂',
@@ -322,6 +375,8 @@ function createPokemonCard(pokemon, showId = false) {
             const baseName = getBasePokemonName(pokemon.name);
             const detailedData = await getPokemonDetailedData(baseName);
             if (detailedData) {
+                // Push current page to navigation stack
+                NavigationSystem.push({ type: 'home' });
                 displayPokemonDetail(detailedData);
             }
         } catch (error) {
@@ -473,7 +528,7 @@ function displayPokemonDetail(pokemon) {
                                         <h4 class="move-type-header type-${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</h4>
                                         <div class="moves-list">
                                             ${movesByType[type]
-                                                .map(move => `<span class="move-badge type-${move.type}">${formatMoveName(move.name)}</span>`)
+                                                .map(move => `<span class="move-badge type-${move.type} clickable-move" data-move-name="${move.name}">${formatMoveName(move.name)}</span>`)
                                                 .join('')}
                                         </div>
                                     </div>
@@ -486,16 +541,187 @@ function displayPokemonDetail(pokemon) {
     `;
     
     document.getElementById('back-button').addEventListener('click', function() {
-        main.innerHTML = `
-            <div id="search">
-                <input type="text" id="pokemon-input" placeholder="Enter Pokemon name or ID">
-                <button id="search-button">Search</button>
-            </div>
-            <div id="pokemon-display"></div>
-        `;
-        displayAllPokemon();
-        setupSearchFunctionality(); // Re-attach search event listeners
+        NavigationSystem.goBack();
     });
+
+    // Add click handlers for moves
+    document.querySelectorAll('.clickable-move').forEach(moveElement => {
+        moveElement.addEventListener('click', function() {
+            const moveName = this.dataset.moveName;
+            // Push current Pokemon page to navigation stack
+            NavigationSystem.push({ type: 'pokemon', data: pokemon.name });
+            displayMoveDetails(moveName);
+        });
+    });
+}
+
+async function fetchMoveData(moveName) {
+    try {
+        const response = await fetch(`${API_URL}move/${moveName.toLowerCase()}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const moveData = await response.json();
+        return moveData;
+    } catch (error) {
+        console.error(`Error fetching move data for ${moveName}:`, error);
+        return null;
+    }
+}
+
+async function displayMoveDetails(moveName) {
+    const main = document.querySelector('main');
+    
+    try {
+        const moveData = await fetchMoveData(moveName);
+        if (!moveData) {
+            main.innerHTML = `
+                <div id="move-detail">
+                    <button id="back-button">← Back</button>
+                    <h1>Move not found</h1>
+                    <p>Sorry, we couldn't load the details for "${moveName}".</p>
+                </div>
+            `;
+            return;
+        }
+
+        const englishEffect = moveData.effect_entries.find(entry => entry.language.name === 'en');
+        const description = englishEffect ? englishEffect.effect.replace(/\f/g, ' ').replace(/\n/g, ' ') : 'No effect description available.';
+        
+        const formattedName = formatMoveName(moveName);
+        const damageClass = moveData.damage_class.name;
+        const type = moveData.type.name;
+        const accuracy = moveData.accuracy ? moveData.accuracy : 'N/A';
+        const power = moveData.power ? moveData.power : 'N/A';
+        
+        main.innerHTML = `
+            <div id="move-detail">
+                <button id="back-button">← Back</button>
+                
+                <div class="detail-container">
+                    <div class="detail-header">
+                        <div class="detail-info">
+                            <h1 class="detail-name">${formattedName}</h1>
+                            <div class="move-stats">
+                                <span class="type-badge type-${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                                <span class="damage-class-badge ${damageClass}">${damageClass.charAt(0).toUpperCase() + damageClass.slice(1)}</span>
+                            </div>
+                            <div class="move-details">
+                                <div class="move-stat">
+                                    <span class="stat-label">Power:</span>
+                                    <span class="stat-value">${power}</span>
+                                </div>
+                                <div class="move-stat">
+                                    <span class="stat-label">Accuracy:</span>
+                                    <span class="stat-value">${accuracy}${accuracy !== 'N/A' ? '%' : ''}</span>
+                                </div>
+                                <div class="move-stat">
+                                    <span class="stat-label">PP:</span>
+                                    <span class="stat-value">${moveData.pp}</span>
+                                </div>
+                            </div>
+                            <p class="detail-description">${description}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="learned-by-section">
+                        <h3>Pokemon that can learn this move</h3>
+                        <div id="pokemon-banners" class="pokemon-banners">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add back button functionality
+        document.getElementById('back-button').addEventListener('click', function() {
+            NavigationSystem.goBack();
+        });
+        
+        // Load Pokemon that can learn this move
+        loadPokemonThatLearnMove(moveData.learned_by_pokemon, moveName);
+        
+    } catch (error) {
+        console.error('Error displaying move details:', error);
+        main.innerHTML = `
+            <div id="move-detail">
+                <button id="back-button">← Back</button>
+                <h1>Error loading move</h1>
+                <p>There was an error loading the move details.</p>
+            </div>
+        `;
+    }
+}
+
+async function loadPokemonThatLearnMove(learnedByList, moveName) {
+    const bannersContainer = document.getElementById('pokemon-banners');
+    
+    if (!learnedByList || learnedByList.length === 0) {
+        bannersContainer.innerHTML = '<p>No Pokemon data available.</p>';
+        return;
+    }
+    
+    bannersContainer.innerHTML = 'Loading Pokemon...';
+    
+    try {
+        const limitedList = learnedByList;
+        const pokemonPromises = limitedList.map(async (pokemon) => {
+            try {
+                const pokemonData = await fetchPokemonData(pokemon.name, { spriteOnly: true });
+                return pokemonData;
+            } catch (error) {
+                console.warn(`Failed to load ${pokemon.name}:`, error);
+                return null;
+            }
+        });
+        
+        const pokemonResults = await Promise.all(pokemonPromises);
+        const validPokemon = pokemonResults.filter(p => {
+            if (!p) return false; // Remove null results
+            // Remove Pokemon without sprites
+            const hasSprite = p.sprite || (p.sprites && p.sprites.front_default);
+            return hasSprite && hasSprite.trim() !== '';
+        });
+        
+        if (validPokemon.length === 0) {
+            bannersContainer.innerHTML = '<p>Could not load Pokemon data.</p>';
+            return;
+        }
+        
+        bannersContainer.innerHTML = validPokemon
+            .map(pokemon => createPokemonBanner(pokemon))
+            .join('');
+            
+        // Add click handlers for Pokemon banners
+        document.querySelectorAll('.pokemon-banner').forEach(banner => {
+            banner.addEventListener('click', async function() {
+                const pokemonName = this.dataset.pokemonName;
+                const detailedPokemon = await getPokemonDetailedData(pokemonName);
+                if (detailedPokemon) {
+                    // Push current move page to navigation stack
+                    NavigationSystem.push({ type: 'move', data: moveName });
+                    displayPokemonDetail(detailedPokemon);
+                }
+            });
+        });
+        
+    } catch (error) {
+        bannersContainer.innerHTML = '<p>Error loading Pokemon data.</p>';
+    }
+}
+
+function createPokemonBanner(pokemon) {
+    const displayName = formatPokemonDisplayName(pokemon.name);
+    // Handle both sprite-only format and full format
+    const spriteUrl = pokemon.sprite || (pokemon.sprites && pokemon.sprites.front_default) || '';
+    
+    return `
+        <div class="pokemon-banner" data-pokemon-name="${pokemon.name}">
+            ${spriteUrl ? `<img src="${spriteUrl}" alt="${pokemon.name}" class="banner-sprite">` : '<div class="banner-sprite-placeholder"></div>'}
+            <span class="banner-name">${displayName}</span>
+        </div>
+    `;
 }
 
 async function displayAllPokemon() {

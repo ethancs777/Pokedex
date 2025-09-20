@@ -376,3 +376,166 @@ body{
 .first-title-half {
     color: #ff0505;
 }
+
+/* Move Detail Page Styles */
+#move-detail {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #ffffff;
+}
+
+.move-stats {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.damage-class-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-shadow: 
+        1px 1px 2px rgba(0,0,0,0.6),
+        -1px -1px 2px rgba(0,0,0,0.6),
+        1px -1px 2px rgba(0,0,0,0.6),
+        -1px 1px 2px rgba(0,0,0,0.6),
+        0px 0px 4px rgba(0,0,0,0.675);
+}
+
+.damage-class-badge.physical {
+    background-color: #dc3545;
+    color: white;
+}
+
+.damage-class-badge.special {
+    background-color: #007bff;
+    color: white;
+}
+
+.damage-class-badge.status {
+    background-color: #6c757d;
+    color: white;
+}
+
+.move-details {
+    display: flex;
+    gap: 20px;
+    margin: 15px 0;
+    flex-wrap: wrap;
+}
+
+.move-stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.learned-by-section {
+    margin-top: 30px;
+}
+
+.learned-by-section h3 {
+    color: #ffffff;
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+/* Pokemon Banner Styles */
+.pokemon-banners {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.pokemon-banner {
+    display: flex;
+    align-items: center;
+    background: #4a5568;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.pokemon-banner:hover {
+    background: #718096;
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
+}
+
+.banner-sprite {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.banner-sprite-placeholder {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    background: #718096;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #cbd5e0;
+}
+
+.banner-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #ffffff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Clickable Move Styles */
+.clickable-move {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.clickable-move:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Design for Move Pages */
+@media (max-width: 768px) {
+    .pokemon-banners {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 8px;
+    }
+    
+    .pokemon-banner {
+        padding: 6px 10px;
+    }
+    
+    .banner-sprite {
+        width: 35px;
+        height: 35px;
+        margin-right: 8px;
+    }
+    
+    .banner-name {
+        font-size: 0.85rem;
+    }
+    
+    .move-details {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
