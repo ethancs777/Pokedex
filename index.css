@@ -65,6 +65,66 @@ body{
     transform: translateY(0);
 }
 
+/* Sorting Controls Styles */
+#sorting-controls {
+    padding: 15px 20px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+#sorting-controls label {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 14px;
+    margin-right: 8px;
+}
+
+#sorting-controls select {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #2d3748;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    min-width: 180px;
+}
+
+#sorting-controls select:hover {
+    border-color: #007bff;
+}
+
+#sorting-controls select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.results-count {
+    text-align: center;
+    color: #cbd5e0;
+    font-size: 14px;
+    margin: 15px 0;
+    font-weight: 500;
+}
+
+/* Responsive Design for Sorting */
+@media (max-width: 768px) {
+    #sorting-controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    #sorting-controls select {
+        min-width: 250px;
+    }
+}
+
 /* Pokemon Grid Styles */
 .pokemon-card {
     background-color: #f7fafc;
@@ -538,4 +598,25 @@ body{
         flex-direction: column;
         gap: 10px;
     }
+}
+
+/* Ability Detail Page Styles */
+#ability-detail {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #ffffff;
+}
+
+/* Clickable Ability Styles */
+.clickable-ability {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.clickable-ability:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }

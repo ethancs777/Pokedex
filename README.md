@@ -4,6 +4,4 @@ This pokedex webpage using the public PokeAPI to load and display data about eac
 
 ## Work-In-Progress
 
-1. Pages for each move (display move name, typing, physical/special/status, priority, power, and PP).
-2. Pages for each ability (name + description should be enough. Maybe include list of pokemon it can be found on).
-3. Search by pokemon generation.
+1. Page styling

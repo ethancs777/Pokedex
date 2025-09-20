@@ -44,6 +44,8 @@ const NavigationSystem = {
                 this.showPokemonDetail(previousPage.data);
             } else if (previousPage.type === 'move') {
                 displayMoveDetails(previousPage.data);
+            } else if (previousPage.type === 'ability') {
+                displayAbilityDetails(previousPage.data);
             }
         } else {
             // Default fallback to home
@@ -58,10 +60,33 @@ const NavigationSystem = {
                 <input type="text" id="pokemon-input" placeholder="Enter Pokemon name or ID">
                 <button id="search-button">Search</button>
             </div>
+            <div id="sorting-controls">
+                <label for="sort-select">Sort by:</label>
+                <select id="sort-select">
+                    <option value="id-asc">Generation (Oldest to Newest)</option>
+                    <option value="id-desc">Generation (Newest to Oldest)</option>
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                </select>
+                <label for="generation-filter">Generation:</label>
+                <select id="generation-filter">
+                    <option value="all">All Generations</option>
+                    <option value="1">Gen 1 (1-151)</option>
+                    <option value="2">Gen 2 (152-251)</option>
+                    <option value="3">Gen 3 (252-386)</option>
+                    <option value="4">Gen 4 (387-493)</option>
+                    <option value="5">Gen 5 (494-649)</option>
+                    <option value="6">Gen 6 (650-721)</option>
+                    <option value="7">Gen 7 (722-809)</option>
+                    <option value="8">Gen 8 (810-905)</option>
+                    <option value="9">Gen 9 (906+)</option>
+                </select>
+            </div>
             <div id="pokemon-display"></div>
         `;
         displayAllPokemon();
         setupSearchFunctionality();
+        setupSortingFunctionality();
     },
     
     async showPokemonDetail(pokemonName) {
@@ -259,8 +284,26 @@ async function getPokemonDetailedData(pokemonName) {
         try {
             const speciesResponse = await fetch(pokemonData.species.url);
             const speciesData = await speciesResponse.json();
-            const englishEntry = speciesData.flavor_text_entries.find(entry => entry.language.name === 'en');
-            description = englishEntry ? englishEntry.flavor_text.replace(/\f/g, ' ').replace(/\n/g, ' ') : 'No description available.';
+            
+            // Get English flavor text entries and prioritize recent versions
+            const englishEntries = speciesData.flavor_text_entries.filter(entry => entry.language.name === 'en');
+            
+            // Prefer newer game versions (they tend to have better descriptions)
+            const preferredVersions = ['shield', 'sword', 'ultra-moon', 'ultra-sun', 'moon', 'sun', 'alpha-sapphire', 'omega-ruby'];
+            let selectedEntry = null;
+            
+            // Try to find entry from preferred versions first
+            for (const version of preferredVersions) {
+                selectedEntry = englishEntries.find(entry => entry.version.name === version);
+                if (selectedEntry) break;
+            }
+            
+            // If no preferred version found, use the last available entry (usually most recent)
+            if (!selectedEntry && englishEntries.length > 0) {
+                selectedEntry = englishEntries[englishEntries.length - 1];
+            }
+            
+            description = selectedEntry ? selectedEntry.flavor_text.replace(/\f/g, ' ').replace(/\n/g, ' ') : 'No description available.';
         } catch (speciesError) {
             console.warn(`Could not fetch species data for ${pokemonName}:`, speciesError);
         }
@@ -502,7 +545,7 @@ function displayPokemonDetail(pokemon) {
                 <div class="detail-abilities">
                     <h3>Abilities</h3>
                     <div class="abilities-list">
-                        ${pokemon.abilities.map(ability => `<span class="ability-badge">${ability.charAt(0).toUpperCase() + ability.slice(1).replace('-', ' ')}</span>`).join('')}
+                        ${pokemon.abilities.map(ability => `<span class="ability-badge clickable-ability" data-ability-name="${ability}">${ability.charAt(0).toUpperCase() + ability.slice(1).replace('-', ' ')}</span>`).join('')}
                     </div>
                 </div>
                 
@@ -551,6 +594,16 @@ function displayPokemonDetail(pokemon) {
             // Push current Pokemon page to navigation stack
             NavigationSystem.push({ type: 'pokemon', data: pokemon.name });
             displayMoveDetails(moveName);
+        });
+    });
+
+    // Add click handlers for abilities
+    document.querySelectorAll('.clickable-ability').forEach(abilityElement => {
+        abilityElement.addEventListener('click', function() {
+            const abilityName = this.dataset.abilityName;
+            // Push current Pokemon page to navigation stack
+            NavigationSystem.push({ type: 'pokemon', data: pokemon.name });
+            displayAbilityDetails(abilityName);
         });
     });
 }
@@ -724,6 +777,142 @@ function createPokemonBanner(pokemon) {
     `;
 }
 
+async function fetchAbilityData(abilityName) {
+    try {
+        const response = await fetch(`${API_URL}ability/${abilityName.toLowerCase()}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const abilityData = await response.json();
+        return abilityData;
+    } catch (error) {
+        console.error(`Error fetching ability data for ${abilityName}:`, error);
+        return null;
+    }
+}
+
+async function displayAbilityDetails(abilityName) {
+    const main = document.querySelector('main');
+    
+    try {
+        const abilityData = await fetchAbilityData(abilityName);
+        if (!abilityData) {
+            main.innerHTML = `
+                <div id="ability-detail">
+                    <button id="back-button">← Back</button>
+                    <h1>Ability not found</h1>
+                    <p>Sorry, we couldn't load the details for "${abilityName}".</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Get detailed effect description
+        const englishEffect = abilityData.effect_entries.find(entry => entry.language.name === 'en');
+        const description = englishEffect ? englishEffect.effect.replace(/\f/g, ' ').replace(/\n/g, ' ') : 'No effect description available.';
+        
+        const formattedName = abilityName.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        
+        main.innerHTML = `
+            <div id="ability-detail">
+                <button id="back-button">← Back</button>
+                
+                <div class="detail-container">
+                    <div class="detail-header">
+                        <div class="detail-info">
+                            <h1 class="detail-name">${formattedName}</h1>
+                            <p class="detail-description">${description}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="learned-by-section">
+                        <h3>Pokemon with this ability</h3>
+                        <div id="pokemon-banners" class="pokemon-banners">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add back button functionality
+        document.getElementById('back-button').addEventListener('click', function() {
+            NavigationSystem.goBack();
+        });
+        
+        // Load Pokemon that have this ability
+        loadPokemonWithAbility(abilityData.pokemon, abilityName);
+        
+    } catch (error) {
+        console.error('Error displaying ability details:', error);
+        main.innerHTML = `
+            <div id="ability-detail">
+                <button id="back-button">← Back</button>
+                <h1>Error loading ability</h1>
+                <p>There was an error loading the ability details.</p>
+            </div>
+        `;
+    }
+}
+
+async function loadPokemonWithAbility(pokemonList, abilityName) {
+    const bannersContainer = document.getElementById('pokemon-banners');
+    
+    if (!pokemonList || pokemonList.length === 0) {
+        bannersContainer.innerHTML = '<p>No Pokemon data available.</p>';
+        return;
+    }
+    
+    bannersContainer.innerHTML = 'Loading Pokemon...';
+    
+    try {
+        const limitedList = pokemonList;
+        const pokemonPromises = limitedList.map(async (pokemonEntry) => {
+            try {
+                const pokemonData = await fetchPokemonData(pokemonEntry.pokemon.name, { spriteOnly: true });
+                return pokemonData;
+            } catch (error) {
+                console.warn(`Failed to load ${pokemonEntry.pokemon.name}:`, error);
+                return null;
+            }
+        });
+        
+        const pokemonResults = await Promise.all(pokemonPromises);
+        const validPokemon = pokemonResults.filter(p => {
+            if (!p) return false; // Remove null results
+            // Remove Pokemon without sprites
+            const hasSprite = p.sprite || (p.sprites && p.sprites.front_default);
+            return hasSprite && hasSprite.trim() !== '';
+        });
+        
+        if (validPokemon.length === 0) {
+            bannersContainer.innerHTML = '<p>Could not load Pokemon data.</p>';
+            return;
+        }
+        
+        bannersContainer.innerHTML = validPokemon
+            .map(pokemon => createPokemonBanner(pokemon))
+            .join('');
+            
+        // Add click handlers for Pokemon banners
+        document.querySelectorAll('.pokemon-banner').forEach(banner => {
+            banner.addEventListener('click', async function() {
+                const pokemonName = this.dataset.pokemonName;
+                const detailedPokemon = await getPokemonDetailedData(pokemonName);
+                if (detailedPokemon) {
+                    // Push current ability page to navigation stack
+                    NavigationSystem.push({ type: 'ability', data: abilityName });
+                    displayPokemonDetail(detailedPokemon);
+                }
+            });
+        });
+        
+    } catch (error) {
+        console.error('Error loading Pokemon with this ability:', error);
+        bannersContainer.innerHTML = '<p>Error loading Pokemon data.</p>';
+    }
+}
+
 async function displayAllPokemon() {
     const displayDiv = document.getElementById('pokemon-display');
     displayDiv.innerHTML = `<div class="pokemon-grid" id="pokemon-grid"></div>`;
@@ -838,11 +1027,234 @@ function setupSearchFunctionality() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    displayAllPokemon();
+function setupSortingFunctionality() {
+    const sortSelect = document.getElementById('sort-select');
+    const generationFilter = document.getElementById('generation-filter');
     
-    // Set up search functionality
-    setupSearchFunctionality();
+    if (sortSelect && generationFilter) {
+        sortSelect.addEventListener('change', applySorting);
+        generationFilter.addEventListener('change', applySorting);
+    }
+}
+
+function getGenerationRanges() {
+    return {
+        1: { min: 1, max: 151 },
+        2: { min: 152, max: 251 },
+        3: { min: 252, max: 386 },
+        4: { min: 387, max: 493 },
+        5: { min: 494, max: 649 },
+        6: { min: 650, max: 721 },
+        7: { min: 722, max: 809 },
+        8: { min: 810, max: 905 },
+        9: { min: 906, max: 1302 }
+    };
+}
+
+function filterPokemonByGeneration(pokemonList, generation) {
+    if (generation === 'all') return pokemonList;
+    
+    const ranges = getGenerationRanges();
+    const range = ranges[generation];
+    
+    if (!range) return pokemonList;
+    
+    return pokemonList.filter(pokemon => {
+        const id = pokemon.id || parseInt(pokemon.name.match(/\d+/)) || 0;
+        return id >= range.min && id <= range.max;
+    });
+}
+
+function sortPokemon(pokemonList, sortType) {
+    const sorted = [...pokemonList];
+    
+    switch (sortType) {
+        case 'id-asc':
+            return sorted.sort((a, b) => {
+                const idA = a.id || parseInt(a.name.match(/\d+/)) || 0;
+                const idB = b.id || parseInt(b.name.match(/\d+/)) || 0;
+                return idA - idB;
+            });
+            
+        case 'id-desc':
+            return sorted.sort((a, b) => {
+                const idA = a.id || parseInt(a.name.match(/\d+/)) || 0;
+                const idB = b.id || parseInt(b.name.match(/\d+/)) || 0;
+                return idB - idA;
+            });
+            
+        case 'name-asc':
+            return sorted.sort((a, b) => a.name.localeCompare(b.name));
+            
+        case 'name-desc':
+            return sorted.sort((a, b) => b.name.localeCompare(a.name));
+            
+        default:
+            return sorted;
+    }
+}
+
+async function applySorting() {
+    const sortSelect = document.getElementById('sort-select');
+    const generationFilter = document.getElementById('generation-filter');
+    const pokemonDisplay = document.getElementById('pokemon-display');
+    
+    if (!sortSelect || !generationFilter || !pokemonDisplay) return;
+    
+    const sortType = sortSelect.value;
+    const generation = generationFilter.value;
+    
+    // Check if we're currently showing search results
+    const searchResultsHeader = document.querySelector('.search-results-header');
+    const isSearchActive = searchResultsHeader !== null;
+    
+    // Show loading state
+    pokemonDisplay.innerHTML = '<div class="loading">Applying filters...</div>';
+    
+    try {
+        let pokemonToSort;
+        
+        if (isSearchActive) {
+            // If we're in search mode, get the search term and perform search again
+            const searchTerm = document.getElementById('pokemon-input').value.trim().toLowerCase();
+            if (searchTerm) {
+                // Perform the search to get current results
+                pokemonToSort = await getCurrentSearchResults(searchTerm);
+            } else {
+                // No search term, fall back to all Pokemon
+                let allPokemonData = CACHE_UTILS.loadPokemonList();
+                if (!allPokemonData) {
+                    allPokemonData = await fetchAndCachePokemonData();
+                }
+                pokemonToSort = allPokemonData;
+            }
+        } else {
+            // Normal mode - get all Pokemon data
+            let allPokemonData = CACHE_UTILS.loadPokemonList();
+            if (!allPokemonData) {
+                allPokemonData = await fetchAndCachePokemonData();
+            }
+            pokemonToSort = allPokemonData;
+        }
+        
+        // Apply generation filter
+        let filteredPokemon = filterPokemonByGeneration(pokemonToSort, generation);
+        
+        // Apply sorting
+        filteredPokemon = sortPokemon(filteredPokemon, sortType);
+        
+        // Display results with appropriate header
+        if (isSearchActive && document.getElementById('pokemon-input').value.trim()) {
+            displaySortedSearchResults(filteredPokemon, document.getElementById('pokemon-input').value.trim());
+        } else {
+            displaySortedPokemon(filteredPokemon);
+        }
+        
+    } catch (error) {
+        console.error('Error applying sorting:', error);
+        pokemonDisplay.innerHTML = '<div class="error">Error applying filters</div>';
+    }
+}
+
+function displaySortedPokemon(pokemonList) {
+    const pokemonDisplay = document.getElementById('pokemon-display');
+    pokemonDisplay.innerHTML = `<div class="pokemon-grid" id="pokemon-grid"></div>`;
+    
+    const pokemonGrid = document.getElementById('pokemon-grid');
+    
+    // Add count information
+    const countInfo = document.createElement('div');
+    countInfo.className = 'results-count';
+    countInfo.textContent = `Showing ${pokemonList.length} Pokemon`;
+    pokemonDisplay.insertBefore(countInfo, pokemonGrid);
+    
+    // Use the same batch rendering as the main display
+    let index = 0;
+    const batchSize = 50;
+    
+    function addNextBatch() {
+        const endIndex = Math.min(index + batchSize, pokemonList.length);
+        
+        for (let i = index; i < endIndex; i++) {
+            pokemonGrid.appendChild(createPokemonCard(pokemonList[i]));
+        }
+        
+        index = endIndex;
+        
+        if (index < pokemonList.length) {
+            requestAnimationFrame(addNextBatch);
+        }
+    }
+    
+    addNextBatch();
+}
+
+async function getCurrentSearchResults(searchTerm) {
+    // This function replicates the search logic to get current search results
+    try {
+        // First try to find exact match
+        const exactMatch = await fetchPokemonData(searchTerm, { spriteOnly: true });
+        if (exactMatch && exactMatch.sprite) {
+            return [exactMatch];
+        }
+    } catch (error) {
+        // Not an exact match, continue with partial search
+    }
+    
+    // Partial search through all Pokemon names
+    try {
+        const response = await fetch(`${API_URL}pokemon?limit=${POKEMON_LIMITS.TOTAL}`);
+        const data = await response.json();
+        const allPokemonNames = data.results;
+        
+        const matchingPokemon = allPokemonNames.filter(pokemon => 
+            pokemon.name.toLowerCase().includes(searchTerm)
+        );
+        
+        const limitedMatches = matchingPokemon.slice(0, POKEMON_LIMITS.SEARCH_RESULTS);
+        
+        const promises = [];
+        for (const pokemon of limitedMatches) {
+            promises.push(
+                fetchPokemonData(pokemon.name, { spriteOnly: true })
+                    .then(pokemonData => pokemonData && pokemonData.sprite ? pokemonData : null)
+                    .catch(() => null)
+            );
+        }
+        
+        const results = await Promise.all(promises);
+        return results.filter(pokemon => pokemon !== null);
+    } catch (error) {
+        console.error('Error getting current search results:', error);
+        return [];
+    }
+}
+
+function displaySortedSearchResults(pokemonList, searchTerm) {
+    const pokemonDisplay = document.getElementById('pokemon-display');
+    pokemonDisplay.innerHTML = `
+        <button id="back-button">← Back to All Pokemon</button>
+        <div class="search-results-header">
+            <h2>Search Results for "${searchTerm}" (${pokemonList.length} found)</h2>
+        </div>
+        <div class="pokemon-grid" id="pokemon-grid"></div>
+    `;
+    
+    const pokemonGrid = document.getElementById('pokemon-grid');
+    
+    document.getElementById('back-button').addEventListener('click', function() {
+        document.getElementById('pokemon-input').value = '';
+        NavigationSystem.showHomePage();
+    });
+    
+    pokemonList.forEach(pokemon => {
+        pokemonGrid.appendChild(createPokemonCard(pokemon, true));
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Use the NavigationSystem to show the home page with sorting controls
+    NavigationSystem.showHomePage();
 });
 
 function performSearch() {
@@ -949,7 +1361,7 @@ function displaySearchResults(pokemonList) {
     
     document.getElementById('back-button').addEventListener('click', function() {
         document.getElementById('pokemon-input').value = '';
-        displayAllPokemon();
+        NavigationSystem.showHomePage();
     });
     
     pokemonList.forEach(pokemon => {
