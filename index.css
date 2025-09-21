@@ -67,6 +67,7 @@ body{
 .homepage .top-navbar {
     position: fixed;
     top: 0;
+    left: 0;
     right: 0;
 }
 
@@ -124,7 +125,6 @@ body{
         left: 0;
         right: 0;
         margin: 0;
-        width: 100%;
     }
     
     .homepage {
@@ -138,6 +138,18 @@ body{
         text-align: center;
         min-width: 0;
         white-space: nowrap;
+        border: none;
+        transform: none;
+    }
+    
+    .top-navbar .nav-item:hover {
+        transform: none;
+        border-color: transparent;
+    }
+    
+    .top-navbar .nav-item.active {
+        border: none;
+        transform: none;
     }
 }
 
