@@ -4,12 +4,14 @@ const CACHE_KEYS = {
     POKEMON_LIST: 'pokemon_list_cache',
     POKEMON_DETAILS: 'pokemon_details_cache',
     MOVE_TYPES: 'move_types_cache',
+    MOVES_LIST: 'moves_list_cache',
+    ABILITIES_LIST: 'abilities_list_cache',
     CACHE_VERSION: 'pokemon_cache_version',
     CACHE_TIMESTAMP: 'pokemon_cache_timestamp'
 };
 
 const CACHE_CONFIG = {
-    VERSION: '1.1', // Increment version to invalidate old cache with 'normal' types
+    VERSION: '1.2', // Increment version to invalidate cache with filtered moves
     EXPIRY_DAYS: 7 // Cache expires after 7 days
 };
 
@@ -196,7 +198,19 @@ function findEnglishEntry(entries, property = 'effect') {
 
 function getDescriptionFromEntry(entry, property = 'effect', fallback = 'No description available.') {
     if (!entry) return fallback;
-    const text = entry[property] || entry.flavor_text || '';
+    
+    // Try the specified property first
+    let text = entry[property];
+    
+    // If that fails, try common alternatives
+    if (!text) {
+        if (property === 'effect') {
+            text = entry.short_effect || entry.flavor_text;
+        } else if (property === 'flavor_text') {
+            text = entry.flavor_text || entry.effect || entry.short_effect;
+        }
+    }
+    
     return text ? cleanText(text) : fallback;
 }
 
@@ -240,6 +254,10 @@ const NavigationSystem = {
             case 'ability':
                 const abilityName = toTitleCase(previousPage.data);
                 return `← Back to ${abilityName}`;
+            case 'moves':
+                return "← Back to All Moves";
+            case 'abilities':
+                return "← Back to All Abilities";
             default:
                 return "← Back";
         }
@@ -256,21 +274,15 @@ const NavigationSystem = {
         return `
             <div class="navigation-bar">
                 <button id="back-button">${backButtonText}</button>
-                <button id="home-button">Home</button>
             </div>
         `;
     },
     
     setupNavigationListeners() {
         const backButton = document.getElementById('back-button');
-        const homeButton = document.getElementById('home-button');
         
         if (backButton) {
             backButton.addEventListener('click', () => this.goBack());
-        }
-        
-        if (homeButton) {
-            homeButton.addEventListener('click', () => this.goHome());
         }
     },
     
@@ -285,11 +297,63 @@ const NavigationSystem = {
                 displayMoveDetails(previousPage.data);
             } else if (previousPage.type === 'ability') {
                 displayAbilityDetails(previousPage.data);
+            } else if (previousPage.type === 'moves') {
+                this.showMovesPage();
+            } else if (previousPage.type === 'abilities') {
+                this.showAbilitiesPage();
             }
         } else {
             // Default fallback to home
             this.showHomePage();
         }
+    },
+    
+    createTopNavigation() {
+        return `
+            <nav class="top-navbar">
+                <span class="nav-item" data-nav="home">Home</span>
+                <span class="nav-item" data-nav="moves">Moves</span>
+                <span class="nav-item" data-nav="abilities">Abilities</span>
+                <span class="nav-item" data-nav="types">Types</span>
+            </nav>
+        `;
+    },
+    
+    setupTopNavigationListeners() {
+        document.querySelectorAll('.top-navbar .nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const navType = e.target.dataset.nav;
+                this.handleTopNavigation(navType);
+                this.updateActiveNavItem(navType);
+            });
+        });
+    },
+    
+    handleTopNavigation(navType) {
+        this.stack = []; // Clear navigation stack when using top nav
+        switch(navType) {
+            case 'home':
+                this.showHomePage();
+                break;
+            case 'moves':
+                this.showMovesPage();
+                break;
+            case 'abilities':
+                this.showAbilitiesPage();
+                break;
+            case 'types':
+                this.showTypesPage();
+                break;
+        }
+    },
+    
+    updateActiveNavItem(activeNav) {
+        document.querySelectorAll('.top-navbar .nav-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.nav === activeNav) {
+                item.classList.add('active');
+            }
+        });
     },
     
     showHomePage() {
@@ -333,6 +397,175 @@ const NavigationSystem = {
         if (detailedPokemon) {
             displayPokemonDetail(detailedPokemon);
         }
+    },
+    
+    async showMovesPage() {
+        const main = document.querySelector('main');
+        main.innerHTML = `
+            <div class="detail-container">
+                <h1 class="detail-name">All Moves</h1>
+                <div id="moves-loading" class="loading">Loading moves...</div>
+                <div id="moves-by-type-container"></div>
+            </div>
+        `;
+        this.updateActiveNavItem('moves');
+        
+        try {
+            // Try to load from cache first
+            let movesWithTypes = CACHE_UTILS.loadMovesData();
+            
+            if (!movesWithTypes) {
+                // Cache miss - fetch from API
+                console.log('Fetching moves from API...');
+                const response = await fetch(`${API_URL}move?limit=1000`);
+                const data = await response.json();
+                const moves = data.results;
+                
+                // Fetch move details with types and filter out unlearnable moves
+                const movePromises = moves.map(async (move) => {
+                    try {
+                        const moveResponse = await fetch(move.url);
+                        const moveData = await moveResponse.json();
+                        
+                        // Filter out moves that can't be learned by any Pokemon
+                        if (!moveData.learned_by_pokemon || moveData.learned_by_pokemon.length === 0) {
+                            console.log(`Filtered out unlearnable move: ${moveData.name}`);
+                            return null;
+                        }
+                        
+                        return {
+                            name: moveData.name,
+                            type: moveData.type.name
+                        };
+                    } catch (error) {
+                        console.warn(`Failed to load move ${move.name}:`, error);
+                        return null;
+                    }
+                });
+                
+                movesWithTypes = (await Promise.all(movePromises)).filter(move => move !== null);
+                console.log(`Filtered moves: ${movesWithTypes.length} learnable moves out of ${moves.length} total moves`);
+                
+                // Cache the filtered results
+                CACHE_UTILS.saveMovesData(movesWithTypes);
+            }
+            
+            // Group moves by type
+            const movesByType = movesWithTypes.reduce((groups, move) => {
+                if (!groups[move.type]) {
+                    groups[move.type] = [];
+                }
+                groups[move.type].push(move);
+                return groups;
+            }, {});
+            
+            // Sort types and moves
+            const sortedTypes = Object.keys(movesByType).sort();
+            
+            document.getElementById('moves-loading').style.display = 'none';
+            document.getElementById('moves-by-type-container').innerHTML = sortedTypes
+                .map(type => `
+                    <div class="move-type-section">
+                        <h3 class="move-type-header type-${type}">${type.charAt(0).toUpperCase() + type.slice(1)} Moves</h3>
+                        <div class="moves-list">
+                            ${movesByType[type]
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map(move => `<span class="move-badge type-${move.type} clickable-move" data-move-name="${move.name}">${toTitleCase(move.name)}</span>`)
+                                .join('')}
+                        </div>
+                    </div>
+                `).join('');
+            
+            // Add click handlers for moves
+            document.querySelectorAll('.clickable-move').forEach(moveElement => {
+                moveElement.addEventListener('click', function() {
+                    const moveName = this.dataset.moveName;
+                    NavigationSystem.push({ type: 'moves' });
+                    displayMoveDetails(moveName);
+                });
+            });
+            
+        } catch (error) {
+            console.error('Error loading moves:', error);
+            document.getElementById('moves-loading').innerHTML = '<div class="error">Error loading moves</div>';
+        }
+    },
+    
+    async showAbilitiesPage() {
+        const main = document.querySelector('main');
+        main.innerHTML = `
+            <div class="detail-container">
+                <h1 class="detail-name">All Abilities</h1>
+                <div id="abilities-loading" class="loading">Loading abilities...</div>
+                <div id="abilities-container" class="abilities-list"></div>
+            </div>
+        `;
+        this.updateActiveNavItem('abilities');
+        
+        try {
+            // Try to load from cache first
+            let abilities = CACHE_UTILS.loadAbilitiesData();
+            
+            if (!abilities) {
+                // Cache miss - fetch from API
+                console.log('Fetching abilities from API...');
+                const response = await fetch(`${API_URL}ability?limit=1000`);
+                const data = await response.json();
+                abilities = data.results;
+                
+                // Cache the results
+                CACHE_UTILS.saveAbilitiesData(abilities);
+            }
+            
+            document.getElementById('abilities-loading').style.display = 'none';
+            
+            // Group abilities alphabetically
+            const groupedAbilities = {};
+            abilities
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .forEach(ability => {
+                    const firstLetter = ability.name.charAt(0).toUpperCase();
+                    if (!groupedAbilities[firstLetter]) {
+                        groupedAbilities[firstLetter] = [];
+                    }
+                    groupedAbilities[firstLetter].push(ability);
+                });
+            
+            // Render abilities with alphabet sections
+            let abilitiesHTML = '';
+            Object.keys(groupedAbilities).sort().forEach(letter => {
+                abilitiesHTML += `<div class="alphabet-section">${letter}</div>`;
+                abilitiesHTML += groupedAbilities[letter]
+                    .map(ability => `<span class="ability-badge clickable-ability" data-ability-name="${ability.name}">${toTitleCase(ability.name)}</span>`)
+                    .join('');
+            });
+            
+            document.getElementById('abilities-container').innerHTML = abilitiesHTML;
+            
+            // Add click handlers for abilities
+            document.querySelectorAll('.clickable-ability').forEach(abilityElement => {
+                abilityElement.addEventListener('click', function() {
+                    const abilityName = this.dataset.abilityName;
+                    NavigationSystem.push({ type: 'abilities' });
+                    displayAbilityDetails(abilityName);
+                });
+            });
+            
+        } catch (error) {
+            console.error('Error loading abilities:', error);
+            document.getElementById('abilities-loading').innerHTML = '<div class="error">Error loading abilities</div>';
+        }
+    },
+    
+    showTypesPage() {
+        const main = document.querySelector('main');
+        main.innerHTML = `
+            <div class="detail-container">
+                <h1 class="detail-name">Types</h1>
+                <p class="detail-description">Types functionality will be implemented later.</p>
+            </div>
+        `;
+        this.updateActiveNavItem('types');
     }
 };
 
@@ -389,6 +622,8 @@ const CACHE_UTILS = {
         localStorage.removeItem(CACHE_KEYS.POKEMON_LIST);
         localStorage.removeItem(CACHE_KEYS.POKEMON_DETAILS);
         localStorage.removeItem(CACHE_KEYS.MOVE_TYPES);
+        localStorage.removeItem(CACHE_KEYS.MOVES_LIST);
+        localStorage.removeItem(CACHE_KEYS.ABILITIES_LIST);
         localStorage.removeItem(CACHE_KEYS.CACHE_VERSION);
         localStorage.removeItem(CACHE_KEYS.CACHE_TIMESTAMP);
         console.log('Pokemon cache cleared');
@@ -449,6 +684,77 @@ const CACHE_UTILS = {
             console.warn('Failed to load cached Pokemon details:', error);
             return null;
         }
+    },
+
+    saveMovesData(movesData) {
+        try {
+            localStorage.setItem(CACHE_KEYS.MOVES_LIST, JSON.stringify(movesData));
+            console.log(`Cached ${movesData.length} moves to localStorage`);
+        } catch (error) {
+            console.warn('Failed to cache moves data:', error);
+        }
+    },
+
+    loadMovesData() {
+        try {
+            if (!this.isCacheValid()) {
+                console.log('Moves cache invalid or expired');
+                return null;
+            }
+            
+            const cachedData = localStorage.getItem(CACHE_KEYS.MOVES_LIST);
+            if (!cachedData) return null;
+            
+            const movesData = JSON.parse(cachedData);
+            console.log(`Loaded ${movesData.length} moves from cache`);
+            return movesData;
+        } catch (error) {
+            console.warn('Failed to load cached moves data:', error);
+            return null;
+        }
+    },
+
+    saveAbilitiesData(abilitiesData) {
+        try {
+            localStorage.setItem(CACHE_KEYS.ABILITIES_LIST, JSON.stringify(abilitiesData));
+            console.log(`Cached ${abilitiesData.length} abilities to localStorage`);
+        } catch (error) {
+            console.warn('Failed to cache abilities data:', error);
+        }
+    },
+
+    loadAbilitiesData() {
+        try {
+            if (!this.isCacheValid()) {
+                console.log('Abilities cache invalid or expired');
+                return null;
+            }
+            
+            const cachedData = localStorage.getItem(CACHE_KEYS.ABILITIES_LIST);
+            if (!cachedData) return null;
+            
+            const abilitiesData = JSON.parse(cachedData);
+            console.log(`Loaded ${abilitiesData.length} abilities from cache`);
+            return abilitiesData;
+        } catch (error) {
+            console.warn('Failed to load cached abilities data:', error);
+            return null;
+        }
+    },
+
+    clearMovesCache() {
+        try {
+            localStorage.removeItem(CACHE_KEYS.MOVES_LIST);
+            console.log('Moves cache cleared');
+        } catch (error) {
+            console.warn('Failed to clear moves cache:', error);
+        }
+    },
+
+    // Debug function to clear all cache - call this from browser console
+    clearAllCache() {
+        this.clearCache();
+        console.log('All cache cleared - refresh the page to see changes');
     }
 };
 
@@ -1183,7 +1489,13 @@ async function displayMoveDetails(moveName) {
         }
 
         const englishEffect = findEnglishEntry(moveData.effect_entries);
-        const description = getDescriptionFromEntry(englishEffect, 'effect', 'No effect description available.');
+        let description = getDescriptionFromEntry(englishEffect, 'effect', null);
+        
+        // If no effect description is available, try flavor text
+        if (!description || description === 'No effect description available.' || description === null) {
+            const englishFlavorText = findEnglishEntry(moveData.flavor_text_entries);
+            description = getDescriptionFromEntry(englishFlavorText, 'flavor_text', 'No description available.');
+        }
         
         const formattedName = toTitleCase(moveName);
         const damageClass = moveData.damage_class.name;
@@ -1544,9 +1856,16 @@ function displaySortedSearchResults(pokemonList, searchTerm) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Setup top navigation listeners
+    NavigationSystem.setupTopNavigationListeners();
     // Use the NavigationSystem to show the home page with sorting controls
     NavigationSystem.showHomePage();
 });
+
+// Global function for debugging - clear cache from browser console
+window.clearPokeCache = function() {
+    CACHE_UTILS.clearAllCache();
+};
 
 function performSearch() {
     const searchTerm = document.getElementById('pokemon-input').value.trim().toLowerCase();
