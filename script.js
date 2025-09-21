@@ -222,6 +222,58 @@ const NavigationSystem = {
         return this.stack.length > 0;
     },
     
+    getBackButtonText() {
+        if (this.stack.length === 0) {
+            return "← Back to Pokemon Grid";
+        }
+        
+        const previousPage = this.stack[this.stack.length - 1];
+        switch (previousPage.type) {
+            case 'home':
+                return "← Back to Pokemon Grid";
+            case 'pokemon':
+                const pokemonName = formatPokemonDisplayName(previousPage.data);
+                return `← Back to ${pokemonName}`;
+            case 'move':
+                const moveName = toTitleCase(previousPage.data);
+                return `← Back to ${moveName}`;
+            case 'ability':
+                const abilityName = toTitleCase(previousPage.data);
+                return `← Back to ${abilityName}`;
+            default:
+                return "← Back";
+        }
+    },
+    
+    goHome() {
+        // Clear the navigation stack and go to home
+        this.stack = [];
+        this.showHomePage();
+    },
+    
+    createNavigationBar() {
+        const backButtonText = this.getBackButtonText();
+        return `
+            <div class="navigation-bar">
+                <button id="back-button">${backButtonText}</button>
+                <button id="home-button">Home</button>
+            </div>
+        `;
+    },
+    
+    setupNavigationListeners() {
+        const backButton = document.getElementById('back-button');
+        const homeButton = document.getElementById('home-button');
+        
+        if (backButton) {
+            backButton.addEventListener('click', () => this.goBack());
+        }
+        
+        if (homeButton) {
+            homeButton.addEventListener('click', () => this.goHome());
+        }
+    },
+    
     goBack() {
         if (this.canGoBack()) {
             const previousPage = this.pop();
@@ -1022,11 +1074,12 @@ function createPokemonCard(pokemon, showId = false) {
             const main = document.querySelector('main');
             main.innerHTML = `
                 <div class="error">
+                    ${NavigationSystem.createNavigationBar()}
                     <h2>Error Loading Pokemon</h2>
                     <p>Sorry, there was an error loading the Pokemon details. Please try again.</p>
-                    <button onclick="NavigationSystem.goBack()">← Go Back</button>
                 </div>
             `;
+            NavigationSystem.setupNavigationListeners();
         }
     });
     
@@ -1120,11 +1173,12 @@ async function displayMoveDetails(moveName) {
         if (!moveData) {
             main.innerHTML = `
                 <div id="move-detail">
-                    <button id="back-button">← Back</button>
+                    ${NavigationSystem.createNavigationBar()}
                     <h1>Move not found</h1>
                     <p>Sorry, we couldn't load the details for "${moveName}".</p>
                 </div>
             `;
+            NavigationSystem.setupNavigationListeners();
             return;
         }
 
@@ -1139,7 +1193,7 @@ async function displayMoveDetails(moveName) {
         
         main.innerHTML = `
             <div id="move-detail">
-                <button id="back-button">← Back</button>
+                ${NavigationSystem.createNavigationBar()}
                 
                 <div class="detail-container">
                     <div class="detail-header">
@@ -1177,10 +1231,8 @@ async function displayMoveDetails(moveName) {
             </div>
         `;
         
-        // Add back button functionality
-        document.getElementById('back-button').addEventListener('click', function() {
-            NavigationSystem.goBack();
-        });
+        // Setup navigation listeners
+        NavigationSystem.setupNavigationListeners();
         
         // Load Pokemon that can learn this move
         loadPokemonThatLearnMove(moveData.learned_by_pokemon, moveName);
@@ -1189,11 +1241,12 @@ async function displayMoveDetails(moveName) {
         console.error('Error displaying move details:', error);
         main.innerHTML = `
             <div id="move-detail">
-                <button id="back-button">← Back</button>
+                ${NavigationSystem.createNavigationBar()}
                 <h1>Error loading move</h1>
                 <p>There was an error loading the move details.</p>
             </div>
         `;
+        NavigationSystem.setupNavigationListeners();
     }
 }
 
@@ -1203,7 +1256,7 @@ function displayPokemonDetail(pokemon) {
     
     main.innerHTML = `
         <div id="pokemon-detail">
-            <button id="back-button">← Back to Pokemon Grid</button>
+            ${NavigationSystem.createNavigationBar()}
             
             <div class="detail-container">
                 <div class="detail-header">
@@ -1271,9 +1324,8 @@ function displayPokemonDetail(pokemon) {
         </div>
     `;
     
-    document.getElementById('back-button').addEventListener('click', function() {
-        NavigationSystem.goBack();
-    });
+    // Setup navigation listeners
+    NavigationSystem.setupNavigationListeners();
 
     // Add click handlers for moves
     document.querySelectorAll('.clickable-move').forEach(moveElement => {
@@ -1318,11 +1370,12 @@ async function displayAbilityDetails(abilityName) {
         if (!abilityData) {
             main.innerHTML = `
                 <div id="ability-detail">
-                    <button id="back-button">← Back</button>
+                    ${NavigationSystem.createNavigationBar()}
                     <h1>Ability not found</h1>
                     <p>Sorry, we couldn't load the details for "${abilityName}".</p>
                 </div>
             `;
+            NavigationSystem.setupNavigationListeners();
             return;
         }
 
@@ -1334,7 +1387,7 @@ async function displayAbilityDetails(abilityName) {
         
         main.innerHTML = `
             <div id="ability-detail">
-                <button id="back-button">← Back</button>
+                ${NavigationSystem.createNavigationBar()}
                 
                 <div class="detail-container">
                     <div class="detail-header">
@@ -1354,10 +1407,8 @@ async function displayAbilityDetails(abilityName) {
             </div>
         `;
         
-        // Add back button functionality
-        document.getElementById('back-button').addEventListener('click', function() {
-            NavigationSystem.goBack();
-        });
+        // Setup navigation listeners
+        NavigationSystem.setupNavigationListeners();
         
         // Load Pokemon that have this ability
         loadPokemonWithAbility(abilityData.pokemon, abilityName);
@@ -1366,11 +1417,12 @@ async function displayAbilityDetails(abilityName) {
         console.error('Error displaying ability details:', error);
         main.innerHTML = `
             <div id="ability-detail">
-                <button id="back-button">← Back</button>
+                ${NavigationSystem.createNavigationBar()}
                 <h1>Error loading ability</h1>
                 <p>There was an error loading the ability details.</p>
             </div>
         `;
+        NavigationSystem.setupNavigationListeners();
     }
 }
 async function displayAllPokemon() {

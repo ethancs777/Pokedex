@@ -176,14 +176,46 @@ body{
     border: 1px solid #e53e3e;
 }
 
-/* Pokemon Detail Page Styles */
-#pokemon-detail {
-    color: white;
-    padding: 20px;
-    max-width: 1000px;
-    margin: 0 auto;
+/* Navigation Bar Styles */
+.navigation-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 15px;
+    margin-bottom: 20px;
+    width: 100%;
 }
 
+#back-button,
+#home-button {
+    background-color: #4a5568;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    box-sizing: border-box;
+}
+
+#back-button:hover,
+#home-button:hover {
+    background-color: #2d3748;
+    transform: translateY(-1px);
+}
+
+#back-button:active,
+#home-button:active {
+    transform: translateY(0);
+}
+
+/* Legacy back button styles for compatibility */
 #back-button {
     background-color: #4a5568;
     color: white;
@@ -199,11 +231,30 @@ body{
     background-color: #2d3748;
 }
 
+/* Responsive Design for Navigation Bar */
+@media (max-width: 768px) {
+    .navigation-bar {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    #back-button,
+    #home-button {
+        width: 100%;
+        text-align: center;
+    }
+}
+
 .detail-container {
     background-color: #1a202c;
     border-radius: 12px;
     padding: 30px;
     border: 1px solid #cbd5e0;
+    max-width: 100%;
+    margin: 0 auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 .detail-header {
@@ -444,10 +495,10 @@ body{
 
 /* Move Detail Page Styles */
 #move-detail {
-    max-width: 1000px;
     margin: 0 auto;
-    padding: 20px;
     color: #ffffff;
+    width: 100%;
+    max-width: 100%;
 }
 
 .move-stats {
@@ -607,10 +658,10 @@ body{
 
 /* Ability Detail Page Styles */
 #ability-detail {
-    max-width: 1000px;
     margin: 0 auto;
-    padding: 20px;
     color: #ffffff;
+    width: 100%;
+    max-width: 100%;
 }
 
 /* Clickable Ability Styles */

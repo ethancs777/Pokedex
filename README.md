@@ -5,3 +5,4 @@ This pokedex webpage using the public PokeAPI to load and display data about eac
 ## Work-In-Progress
 
 1. Page styling
+2. Type Chart (Weakness/Super Effective/Regular Effectiveness)
