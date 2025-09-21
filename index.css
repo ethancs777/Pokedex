@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 html, body {
     -ms-overflow-style: none;
@@ -30,9 +29,13 @@ h1{
     padding: 8px 16px;
     border-radius: 20px;
     font-size: 0.9rem;
-    font-weight: 600;
-    font-family: 'Orbitron', sans-serif;
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8), 0 0 6px rgba(0, 0, 0, 0.6);
+    font-weight: 800;
+    font-family: 'Inter', -webkit-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    text-shadow: 
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000;
     position: relative;
     display: inline-block;
     min-width: 80px;
@@ -392,7 +395,7 @@ body {
     
     .detail-container {
         padding: 20px;
-        margin: 70px 0 0 0; /* Added top margin for mobile navbar */
+        margin: 70px 0 0 0; 
         border-radius: 0;
     }
 }
@@ -402,7 +405,7 @@ body {
     border-radius: 12px;
     padding: 30px;
     max-width: 100%;
-    margin: 80px auto 0 auto; /* Added 80px top margin to clear navbar */
+    margin: 80px auto 0 auto; 
     overflow-x: hidden;
     box-sizing: border-box;
 }
@@ -522,7 +525,7 @@ body {
     width: 100%;
 }
 
-.abilities-list {
+.detail-abilities .abilities-list {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
@@ -535,8 +538,8 @@ body {
     padding: 14px 16px;
     border-radius: 8px;
     font-size: 0.9rem;
-    font-weight: 500;
-    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-family: 'Inter', -webkit-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     border: 1px solid #4a5568;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
@@ -545,9 +548,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.detail-abilities .ability-badge {
     width: auto;
     min-width: 120px;
-    box-sizing: border-box;
 }
 
 .move-badge {
@@ -555,9 +562,13 @@ body {
     padding: 10px 15px;
     border-radius: 15px;
     font-size: 0.9rem;
-    font-weight: 600;
-    font-family: 'Orbitron', sans-serif;
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8), 0 0 6px rgba(0, 0, 0, 0.6);
+    font-weight: 700;
+    font-family: 'Inter', -webkit-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    text-shadow: 
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000;
     display: inline-block;
     min-width: 80px;
     text-align: center;
@@ -678,11 +689,15 @@ body {
     padding: 8px 16px;
     border-radius: 20px;
     font-size: 0.9rem;
-    font-weight: 600;
-    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-family: 'Inter', -webkit-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     text-transform: uppercase;
     color: #fff;
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8), 0 0 6px rgba(0, 0, 0, 0.6);
+    text-shadow: 
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000;
 }
 
 .damage-class-badge.physical {
@@ -779,7 +794,6 @@ body {
     white-space: nowrap;
 }
 
-/* Clickable Move Styles */
 .clickable-move {
     cursor: pointer;
     transition: all 0.2s ease;
@@ -792,7 +806,6 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Responsive Design for Move Pages */
 @media (max-width: 768px) {
     .pokemon-banners {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -819,7 +832,6 @@ body {
     }
 }
 
-/* Ability Detail Page Styles */
 #ability-detail {
     margin: 0 auto;
     color: #ffffff;
@@ -827,7 +839,6 @@ body {
     max-width: 100%;
 }
 
-/* Clickable Ability Styles */
 .clickable-ability {
     cursor: pointer;
     transition: all 0.2s ease;
@@ -840,7 +851,6 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Alphabetical Section Headers */
 .alphabet-section {
     grid-column: 1 / -1;
     color: #e2e8f0;
@@ -857,7 +867,6 @@ body {
     margin-top: 0;
 }
 
-/* Types page styles */
 .types-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -925,7 +934,6 @@ body {
     gap: 8px;
 }
 
-/* Larger type badges specifically for types page */
 .types-grid .type-badge {
     font-size: 1.1rem;
     padding: 12px 20px;
@@ -963,7 +971,6 @@ body {
     }
 }
 
-/* New types list layout */
 .types-list {
     display: flex;
     flex-direction: column;
@@ -979,15 +986,15 @@ body {
 }
 
 .type-detail-card .type-name {
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: bold;
     margin: 0 0 15px 0;
     text-align: center;
-    padding: 12px 18px;
+    padding: 8px 16px;
     border-radius: 20px;
     display: inline-block;
     width: auto;
-    min-width: 120px;
+    min-width: 100px;
 }
 
 .type-effectiveness-compact {
@@ -1018,7 +1025,6 @@ body {
     flex: 1;
 }
 
-/* Mobile adjustments for new layout */
 @media (max-width: 768px) {
     .type-detail-card {
         padding: 15px;

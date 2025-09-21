@@ -513,24 +513,49 @@ const NavigationSystem = {
         
         try {
             // Try to load from cache first
-            let abilities = CACHE_UTILS.loadAbilitiesData();
+            let usableAbilities = CACHE_UTILS.loadAbilitiesData();
             
-            if (!abilities) {
+            if (!usableAbilities) {
                 // Cache miss - fetch from API
                 console.log('Fetching abilities from API...');
                 const response = await fetch(`${API_URL}ability?limit=1000`);
                 const data = await response.json();
-                abilities = data.results;
+                const abilities = data.results;
                 
-                // Cache the results
-                CACHE_UTILS.saveAbilitiesData(abilities);
+                // Fetch ability details and filter out unused abilities
+                const abilityPromises = abilities.map(async (ability) => {
+                    try {
+                        const abilityResponse = await fetch(ability.url);
+                        const abilityData = await abilityResponse.json();
+                        
+                        // Filter out abilities that aren't used by any Pokemon
+                        if (!abilityData.pokemon || abilityData.pokemon.length === 0) {
+                            console.log(`Filtered out unused ability: ${abilityData.name}`);
+                            return null;
+                        }
+                        
+                        return {
+                            name: abilityData.name,
+                            url: ability.url
+                        };
+                    } catch (error) {
+                        console.warn(`Failed to load ability ${ability.name}:`, error);
+                        return null;
+                    }
+                });
+                
+                usableAbilities = (await Promise.all(abilityPromises)).filter(ability => ability !== null);
+                console.log(`Filtered abilities: ${usableAbilities.length} usable abilities out of ${abilities.length} total abilities`);
+                
+                // Cache the filtered results
+                CACHE_UTILS.saveAbilitiesData(usableAbilities);
             }
             
             document.getElementById('abilities-loading').style.display = 'none';
             
             // Group abilities alphabetically
             const groupedAbilities = {};
-            abilities
+            usableAbilities
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .forEach(ability => {
                     const firstLetter = ability.name.charAt(0).toUpperCase();
