@@ -24,6 +24,10 @@ h1{
     font-size: 3rem;
 }
 
+.main-title:not(.homepage .main-title) {
+    display: none;
+}
+
 .type-badge {
     color: #fff;
     padding: 8px 16px;
@@ -48,8 +52,30 @@ body{
     font-family: 'Inter', sans-serif;
 }
 
+.navbar-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 90px;
+    background: #2d3748;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.navbar-background h1 {
+    color: #F8D030;
+    font-weight: bold;
+    text-align: center;
+    margin: 0;
+    font-size: 2.5rem;
+}
+
 .top-navbar {
-    position: absolute;
+    position: fixed;
     top: 0px;
     right: 0px;
     background: rgba(26, 32, 44, 0.95);
@@ -57,21 +83,19 @@ body{
     border-bottom: 2px solid #4a5568;
     border-left: 2px solid #4a5568;
     border-bottom-left-radius: 12px;
-    z-index: 200;
+    z-index: 1000;
     padding: 15px 20px;
     display: flex;
     gap: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.homepage .top-navbar {
-    position: fixed;
-    top: 0;
-    right: 0;
-}
-
 .homepage {
     padding-top: 70px;
+}
+
+.homepage .navbar-background {
+    display: none;
 }
 
 .homepage h1 {
@@ -105,7 +129,7 @@ body{
 
 @media (max-width: 768px) {
     .top-navbar {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         right: 0;
@@ -118,12 +142,8 @@ body{
         padding: 12px 20px;
     }
     
-    .homepage .top-navbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        margin: 0;
+    .navbar-background {
+        display: none;
     }
     
     .homepage {
@@ -153,12 +173,12 @@ body{
 }
 
 body {
-    padding-top: 0;
+    padding-top: 70px;
 }
 
 @media (max-width: 768px) {
     body {
-        padding-top: 0;
+        padding-top: 60px;
     }
     
     #search {
