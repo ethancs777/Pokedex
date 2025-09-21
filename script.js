@@ -345,6 +345,12 @@ const NavigationSystem = {
                 this.showTypesPage();
                 break;
         }
+        
+        // Scroll to top of page when navigation item is clicked
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
     },
     
     updateActiveNavItem(activeNav) {
