@@ -566,20 +566,155 @@ const NavigationSystem = {
         }
     },
     
-    showTypesPage() {
+    async showTypesPage() {
         // Remove homepage class from body
         document.body.classList.remove('homepage');
         
         const main = document.querySelector('main');
         main.innerHTML = `
             <div class="detail-container">
-                <h1 class="detail-name">Types</h1>
-                <p class="detail-description">Types functionality will be implemented later.</p>
+                <h1 class="detail-name">All Types</h1>
+                <div id="types-loading" class="loading">Loading types...</div>
+                <div id="types-container"></div>
             </div>
         `;
         this.updateActiveNavItem('types');
+        
+        console.log('Starting to fetch types data...');
+        
+        try {
+            const typesData = await fetchAllTypesData();
+            console.log('Types data fetched:', typesData);
+            displayTypesGrid(typesData);
+        } catch (error) {
+            console.error('Error loading types:', error);
+            document.getElementById('types-loading').innerHTML = 'Error loading types. Please try again.';
+        }
     }
 };
+
+// Types functionality
+async function fetchAllTypesData() {
+    console.log('fetchAllTypesData called');
+    const cacheKey = 'types_data_cache';
+    const cached = localStorage.getItem(cacheKey);
+    
+    if (cached && !CACHE_UTILS.isExpired(parseInt(localStorage.getItem(cacheKey + '_timestamp')))) {
+        console.log('Loading types from cache');
+        return JSON.parse(cached);
+    }
+
+    console.log('Cache miss, fetching from API');
+    try {
+        const response = await fetch(`${API_URL}type?limit=20`);
+        const data = await response.json();
+        
+        // Fetch detailed data for each type
+        const typePromises = data.results
+            .filter(type => !['unknown', 'shadow'].includes(type.name)) // Filter out unknown/shadow types
+            .map(async (type) => {
+                const typeResponse = await fetch(type.url);
+                const typeData = await typeResponse.json();
+                
+                // More detailed debugging
+                console.log(`Type: ${typeData.name}`, typeData.damage_relations);
+                
+                const damageRelations = typeData.damage_relations || {};
+                const immuneTo = damageRelations.no_damage_from || [];
+                const cantDamage = damageRelations.no_damage_to || [];
+                
+                console.log(`${typeData.name} immuneTo:`, immuneTo);
+                console.log(`${typeData.name} cantDamage:`, cantDamage);
+                
+                return {
+                    name: typeData.name,
+                    weakTo: (damageRelations.double_damage_from || []).map(t => t.name),
+                    strongAgainst: (damageRelations.double_damage_to || []).map(t => t.name),
+                    immuneTo: immuneTo.map(t => t.name),
+                    cantDamage: cantDamage.map(t => t.name)
+                };
+            });
+            
+        const typesData = await Promise.all(typePromises);
+        
+        // Sort alphabetically
+        typesData.sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Cache the result
+        localStorage.setItem(cacheKey, JSON.stringify(typesData));
+        localStorage.setItem(cacheKey + '_timestamp', Date.now().toString());
+        
+        return typesData;
+    } catch (error) {
+        console.error('Error fetching types data:', error);
+        throw error;
+    }
+}
+
+function displayTypesGrid(typesData) {
+    const loadingElement = document.getElementById('types-loading');
+    const container = document.getElementById('types-container');
+    
+    if (loadingElement) loadingElement.style.display = 'none';
+    
+    container.innerHTML = `
+        <div class="types-list">
+            ${typesData.map(type => `
+                <div class="type-detail-card">
+                    <h2 class="type-name type-${type.name}">${type.name.toUpperCase()}</h2>
+                    
+                    <div class="type-effectiveness-compact">
+                        <div class="effectiveness-row">
+                            <span class="effectiveness-label">WEAK TO:</span>
+                            <div class="type-badges">
+                                ${type.weakTo.length > 0 ? 
+                                    type.weakTo.map(weakType => 
+                                        `<span class="type-badge type-${weakType}">${weakType.toUpperCase()}</span>`
+                                    ).join('') : 
+                                    '<span class="no-types">None</span>'
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="effectiveness-row">
+                            <span class="effectiveness-label">STRONG AGAINST:</span>
+                            <div class="type-badges">
+                                ${type.strongAgainst.length > 0 ? 
+                                    type.strongAgainst.map(strongType => 
+                                        `<span class="type-badge type-${strongType}">${strongType.toUpperCase()}</span>`
+                                    ).join('') : 
+                                    '<span class="no-types">None</span>'
+                                }
+                            </div>
+                        </div>
+                        
+                        ${(type.immuneTo && type.immuneTo.length > 0) ? `
+                        <div class="effectiveness-row">
+                            <span class="effectiveness-label">IMMUNE TO:</span>
+                            <div class="type-badges">
+                                ${type.immuneTo.map(immuneType => 
+                                    `<span class="type-badge type-${immuneType}">${immuneType.toUpperCase()}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${(type.cantDamage && type.cantDamage.length > 0) ? `
+                        <div class="effectiveness-row">
+                            <span class="effectiveness-label">INEFFECTIVE AGAINST:</span>
+                            <div class="type-badges">
+                                ${type.cantDamage.map(cantDamageType => 
+                                    `<span class="type-badge type-${cantDamageType}">${cantDamageType.toUpperCase()}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
 
 
 const CACHE_UTILS = {
@@ -638,6 +773,8 @@ const CACHE_UTILS = {
         localStorage.removeItem(CACHE_KEYS.ABILITIES_LIST);
         localStorage.removeItem(CACHE_KEYS.CACHE_VERSION);
         localStorage.removeItem(CACHE_KEYS.CACHE_TIMESTAMP);
+        localStorage.removeItem('types_data_cache');
+        localStorage.removeItem('types_data_cache_timestamp');
         console.log('Pokemon cache cleared');
     },
 
