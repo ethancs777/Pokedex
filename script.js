@@ -357,6 +357,9 @@ const NavigationSystem = {
     },
     
     showHomePage() {
+        // Add homepage class to body for sticky navbar
+        document.body.classList.add('homepage');
+        
         const main = document.querySelector('main');
         main.innerHTML = `
             <div id="search">
@@ -400,6 +403,9 @@ const NavigationSystem = {
     },
     
     async showMovesPage() {
+        // Remove homepage class from body
+        document.body.classList.remove('homepage');
+        
         const main = document.querySelector('main');
         main.innerHTML = `
             <div class="detail-container">
@@ -492,6 +498,9 @@ const NavigationSystem = {
     },
     
     async showAbilitiesPage() {
+        // Remove homepage class from body
+        document.body.classList.remove('homepage');
+        
         const main = document.querySelector('main');
         main.innerHTML = `
             <div class="detail-container">
@@ -558,6 +567,9 @@ const NavigationSystem = {
     },
     
     showTypesPage() {
+        // Remove homepage class from body
+        document.body.classList.remove('homepage');
+        
         const main = document.querySelector('main');
         main.innerHTML = `
             <div class="detail-container">
@@ -1472,6 +1484,9 @@ function createRadarChart(stats) {
 }
 
 async function displayMoveDetails(moveName) {
+    // Remove homepage class from body
+    document.body.classList.remove('homepage');
+    
     const main = document.querySelector('main');
     
     try {
@@ -1563,6 +1578,9 @@ async function displayMoveDetails(moveName) {
 }
 
 function displayPokemonDetail(pokemon) {
+    // Remove homepage class from body
+    document.body.classList.remove('homepage');
+    
     const main = document.querySelector('main');
     const formattedName = pokemon.name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     
@@ -1675,6 +1693,9 @@ function createPokemonBanner(pokemon) {
 }
 
 async function displayAbilityDetails(abilityName) {
+    // Remove homepage class from body
+    document.body.classList.remove('homepage');
+    
     const main = document.querySelector('main');
     
     try {
@@ -1862,6 +1883,7 @@ document.addEventListener('DOMContentLoaded', function() {
     NavigationSystem.showHomePage();
 });
 
+// Navbar scroll behavior
 // Global function for debugging - clear cache from browser console
 window.clearPokeCache = function() {
     CACHE_UTILS.clearAllCache();

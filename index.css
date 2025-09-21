@@ -20,7 +20,7 @@ h1{
     font-weight:bold;
     padding: 1rem;
     text-align: center;
-    top: 0;
+    margin-top: 80px;
     font-size: 3rem;
 }
 
@@ -44,9 +44,9 @@ body{
 }
 
 .top-navbar {
-    position: fixed;
-    top: 0;
-    right: 0;
+    position: absolute;
+    top: 0px;
+    right: 0px;
     background: rgba(26, 32, 44, 0.95);
     backdrop-filter: blur(10px);
     border-bottom: 2px solid #4a5568;
@@ -57,6 +57,20 @@ body{
     display: flex;
     gap: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.homepage .top-navbar {
+    position: fixed;
+    top: 0;
+    right: 0;
+}
+
+.homepage {
+    padding-top: 70px;
+}
+
+.homepage h1 {
+    margin-top: 0;
 }
 
 .top-navbar .nav-item {
@@ -86,16 +100,27 @@ body{
 
 @media (max-width: 768px) {
     .top-navbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        border-radius: 0;
-        border-left: none;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        border-radius: 8px;
+        border-left: 2px solid #4a5568;
         justify-content: center;
         flex-wrap: wrap;
         gap: 10px;
         padding: 12px 15px;
+    }
+    
+    .homepage .top-navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+    }
+    
+    .homepage {
+        padding-top: 60px;
     }
     
     .top-navbar .nav-item {
@@ -108,12 +133,12 @@ body{
 }
 
 body {
-    padding-top: 70px;
+    padding-top: 0;
 }
 
 @media (max-width: 768px) {
     body {
-        padding-top: 80px;
+        padding-top: 0;
     }
 }
 
@@ -229,7 +254,6 @@ body {
 /* Pokemon Grid Styles */
 .pokemon-card {
     background-color: #f7fafc;
-    border: 2px solid #cbd5e0;
     border-radius: 12px;
     padding: 20px;
     text-align: center;
@@ -366,7 +390,7 @@ body {
     
     .detail-container {
         padding: 20px;
-        margin: 0;
+        margin: 70px 0 0 0; /* Added top margin for mobile navbar */
         border-radius: 0;
     }
 }
@@ -375,9 +399,8 @@ body {
     background-color: #1a202c;
     border-radius: 12px;
     padding: 30px;
-    border: 1px solid #cbd5e0;
     max-width: 100%;
-    margin: 0 auto;
+    margin: 80px auto 0 auto; /* Added 80px top margin to clear navbar */
     overflow-x: hidden;
     box-sizing: border-box;
 }
