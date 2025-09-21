@@ -447,20 +447,6 @@ body {
     margin-left: 0;
 }
 
-.type-badge {
-    display: inline-block;
-    padding: 8px 16px;
-    margin-right: 10px;
-    margin-left: 0;
-    border-radius: 20px;
-    color: white;
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 0.9rem;
-    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.7);
-    filter: contrast(1.15) saturate(1.05);
-}
-
 .type-normal { background-color: #A8A878; }
 .type-fire { background-color: #F08030; }
 .type-water { background-color: #6890F0; }
@@ -536,6 +522,13 @@ body {
     width: 100%;
 }
 
+.abilities-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
 .ability-badge {
     background-color: #2d3748;
     color: #e2e8f0;
@@ -552,7 +545,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
+    width: auto;
+    min-width: 120px;
     box-sizing: border-box;
 }
 
