@@ -106,15 +106,16 @@ body{
 @media (max-width: 768px) {
     .top-navbar {
         position: absolute;
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        border-radius: 8px;
-        border-left: 2px solid #4a5568;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 12px 15px;
+        top: 0;
+        left: 0;
+        right: 0;
+        border-radius: 0;
+        border-left: none;
+        border-bottom: 2px solid #4a5568;
+        justify-content: space-around;
+        flex-wrap: nowrap;
+        gap: 0;
+        padding: 12px 20px;
     }
     
     .homepage .top-navbar {
@@ -122,6 +123,8 @@ body{
         top: 0;
         left: 0;
         right: 0;
+        margin: 0;
+        width: 100%;
     }
     
     .homepage {
@@ -130,10 +133,11 @@ body{
     
     .top-navbar .nav-item {
         font-size: 14px;
-        padding: 8px 12px;
+        padding: 10px 15px;
         flex: 1;
         text-align: center;
-        min-width: 60px;
+        min-width: 0;
+        white-space: nowrap;
     }
 }
 
