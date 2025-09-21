@@ -67,7 +67,6 @@ body{
 .homepage .top-navbar {
     position: fixed;
     top: 0;
-    left: 0;
     right: 0;
 }
 
@@ -160,6 +159,12 @@ body {
 @media (max-width: 768px) {
     body {
         padding-top: 0;
+    }
+    
+    #search {
+        position: static !important;
+        top: auto !important;
+        z-index: auto !important;
     }
 }
 
